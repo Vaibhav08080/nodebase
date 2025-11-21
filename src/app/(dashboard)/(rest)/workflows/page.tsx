@@ -1,8 +1,11 @@
-const Page =(()=>{
-    return(
-        <div>
-            <h1>Workflows</h1>
-        </div>
+import { requireAuth } from "@/lib/auth.utils"
+
+const Page = async ()=>{
+    await requireAuth()
+        
+    return( 
+        <div> workflows</div>
+        
     )
-})
+}
 export default Page
