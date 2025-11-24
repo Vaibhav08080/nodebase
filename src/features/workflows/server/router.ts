@@ -1,45 +1,103 @@
 import prisma from "@/lib/db";
-import {generateSlug} from "random-word-slugs"
-import { createTRPCRouter, PremiumProcedure, protectedProcedure } from "@/trpc/init";
+import { generateSlug } from "random-word-slugs";
+import {
+  createTRPCRouter,
+  PremiumProcedure,
+  protectedProcedure,
+} from "@/trpc/init";
 import z from "zod";
+import { PAGINATION } from "@/config/constants";
 
 export const workflowRouter = createTRPCRouter({
-    create:PremiumProcedure.mutation(({ctx})=>{
-        return prisma.workFlow.create({
-            data:{
-                name:generateSlug(3),
-                userId:ctx.auth.user.id
-            }
-            
-        })
-    }),
-    
-    remove: protectedProcedure.input(z.object({id:z.string()})).mutation(({ctx , input})=>{
-        return prisma.workFlow.delete({
-            where:{
-                id:input.id,
-                userId: ctx.auth.user.id
-            }
-        })
+  create: PremiumProcedure.mutation(({ ctx }) => {
+    return prisma.workFlow.create({
+      data: {
+        name: generateSlug(3),
+        userId: ctx.auth.user.id,
+      },
+    });
+  }),
+
+  remove: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(({ ctx, input }) => {
+      return prisma.workFlow.delete({
+        where: {
+          id: input.id,
+          userId: ctx.auth.user.id,
+        },
+      });
     }),
 
-    updateName:protectedProcedure.input(z.object({id:z.string() , name:z.string().min(1)}))
-    .mutation(({ctx , input})=>{
-        return prisma.workFlow.update({
-             where:{id:input.id , userId:ctx.auth.user.id}, 
-             data:{name:input.name}
-        })
+  updateName: protectedProcedure
+    .input(z.object({ id: z.string(), name: z.string().min(1) }))
+    .mutation(({ ctx, input }) => {
+      return prisma.workFlow.update({
+        where: { id: input.id, userId: ctx.auth.user.id },
+        data: { name: input.name },
+      });
+    }),
+  getone: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(({ ctx, input }) => {
+      return prisma.workFlow.findUnique({
+        where: { id: input.id, userId: ctx.auth.user.id },
+      });
+    }),
+  getmany: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().default(PAGINATION.DEFAULT_PAGE),
+        pageSize: z
+          .number()
+          .min(PAGINATION.MIN_PAGE_SIZE)
+          .max(PAGINATION.MAX_PAGE_SIZE)
+          .default(PAGINATION.DEFAULT_PAGE_SIZE),
+        search: z.string().default(""),
+      })
+    )
+    .query(async ({ ctx , input}) => {
+      const {page , pageSize , search} = input
+
+      const [items , totalCount] = await Promise.all([
+        prisma.workFlow.findMany({
+            skip:(page-1)*pageSize,
+            take:pageSize,
+          where:{
+            userId:ctx.auth.user.id,
+            name: {
+              contains:search,
+              mode: "insensitive",
+            },
+          },
+          orderBy:{
+            updatedAt:"desc"
+          }
+        }),
+        prisma.workFlow.count({
+          where:{
+           userId:ctx.auth.user.id,
+           name: {
+             contains:search,
+             mode: "insensitive",
+           },
+            }
+          }
+        ),
        
-
-    }),
-    getone:protectedProcedure.input(z.object({id:z.string()})).query(({ctx , input})=>{
-        return prisma.workFlow.findUnique({
-            where:{id:input.id , userId:ctx.auth.user.id}
-        })
-    }),
-    getmany:protectedProcedure.query(({ctx })=>{
-        return prisma.workFlow.findMany({
-            where:{ userId:ctx.auth.user.id}
-        })
-    })
-})
+      ])
+    
+      const totalPages = Math.ceil(totalCount / pageSize)
+      const hasNextPage = page < totalPages
+      const hasPreviousPage = page > 1
+    
+      return {
+        totalCount,
+        totalPages,
+        page,
+        pageSize,
+        hasNextPage,
+        hasPreviousPage,
+        items:items
+      }
+    })})

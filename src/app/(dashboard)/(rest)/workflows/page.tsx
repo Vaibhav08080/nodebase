@@ -5,9 +5,16 @@ import { ErrorBoundary } from "react-error-boundary";
 import { Suspense } from "react";
 import { WorkflowsList } from "@/features/workflows/components/workflows";
 import { WorkflowsContainer } from "@/features/workflows/components/workflows";
-const Page = async () => {
+import { SearchParams } from "nuqs";
+import { workflowsParamsLoader } from "@/features/workflows/server/params-loader";
+
+type Props = {
+  searchParams: Promise<SearchParams>
+}
+const Page = async ({searchParams}: Props) => {
   await requireAuth();
-  prefetchWorkflows();
+  const params = await workflowsParamsLoader(searchParams)
+  prefetchWorkflows(params)
 
   return (
     <WorkflowsContainer>    
