@@ -11,7 +11,7 @@ import { useEntitySearch } from "@/hooks/use-entity-search";
 import { EntityPagination } from "@/components/entity-component";
 import { LoadingView } from "@/components/entity-component";
 import { EntityList } from "@/components/entity-component";
-import { type WorkFlow } from "@/generated/prisma/client";
+import type { WorkFlow } from "@/domain/prisma-browser-types";
 import { Divide, WorkflowIcon } from "lucide-react";
 import { EntityItem } from "@/components/entity-component";
 import { formatDistanceToNow } from "date-fns";
