@@ -18,7 +18,8 @@ import "@xyflow/react/dist/style.css";
 import type { Node, Edge, Connection } from "@xyflow/react";
 import { nodeComponents } from "@/config/node-components";
 import { AddNodeButton } from "@/components/add-node-button";
-
+import { useSetAtom } from "jotai";
+import { editorAtom } from "../store/atoms";
 export const EditorLoading = () => {
   return <LoadingView message="Loading Editor" />;
 };
@@ -27,6 +28,7 @@ export const EditorError = () => {
 };
 export const Editor = ({ workflowId }: { workflowId: string }) => {
   const { data: workflow } = useSuspenseWorkflow(workflowId);
+  const setEditor = useSetAtom(editorAtom);
   const [nodes, setNodes] = useState<Node[]>(workflow.nodes);
   const [edges, setEdges] = useState<Edge[]>(workflow.edges);
   const onNodesChange = useCallback(
@@ -53,7 +55,13 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       nodeTypes={nodeComponents}
+      onInit={setEditor}
       fitView
+      snapGrid={[10,10]}
+      snapToGrid
+      panOnScroll
+      panOnDrag={false}
+      selectionOnDrag
       proOptions={{
         hideAttribution:true
       }}>
